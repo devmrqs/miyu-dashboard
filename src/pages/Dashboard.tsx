@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../lib/api";
 import type { Guild } from "../types/guild";
@@ -33,9 +34,13 @@ function Dashboard() {
       <h1 className="text-2xl font-bold mb-6">Seus servidores</h1>
       <ul className="space-y-3">
         {guilds?.map((guild) => (
-          <li key={guild.id} className="bg-white/50 p-4 rounded-2xl">
+          <Link
+            key={guild.id}
+            to={`/dashboard/${guild.id}/channels`}
+            className="block bg-white/50 p-4 rounded-2xl hover:bg-white/70 transition"
+          >
             {guild.name}
-          </li>
+          </Link>
         ))}
       </ul>
     </div>

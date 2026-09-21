@@ -29,6 +29,7 @@ function AddBlockMenu({ onAdd }: AddBlockMenuProps) {
       label="Adicionar bloco"
       placeholder="Escolha um tipo..."
       options={BLOCK_OPTIONS}
+      value=""
       onValueChange={handleChange}
     />
   );

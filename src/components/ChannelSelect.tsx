@@ -27,7 +27,7 @@ function ChannelSelect({ value, onChange }: ChannelSelectProps) {
       label="Enviar para"
       placeholder="Escolha um canal..."
       options={options}
-      value={value ?? undefined}
+      value={value || ""}
       onValueChange={onChange}
     />
   );

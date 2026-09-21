@@ -24,6 +24,7 @@ export interface ButtonLinkBlock extends BaseBlock {
   type: "button-link";
   label: string;
   url: string;
+  emoji?: string;
 }
 
 export interface ButtonActionBlock extends BaseBlock {
@@ -31,6 +32,7 @@ export interface ButtonActionBlock extends BaseBlock {
   label: string;
   actionId: string;
   style: "primary" | "secondary" | "success" | "danger";
+  emoji?: string;
 }
 
 export interface SectionThumbnailBlock extends BaseBlock {

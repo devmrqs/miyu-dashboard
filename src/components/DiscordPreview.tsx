@@ -22,6 +22,14 @@ function escapeHtml(text: string): string {
 function renderMarkdown(text: string) {
   const html = escapeHtml(text)
     .replace(
+      /^>>> ([\s\S]+)$/gm,
+      '<div class="border-l-4 border-[#4e5058] pl-3 my-1 text-[#dbdee1]">$1</div>',
+    )
+    .replace(
+      /^> (.*$)/gim,
+      '<div class="border-l-4 border-[#4e5058] pl-3 my-1 text-[#dbdee1]">$1</div>',
+    )
+    .replace(
       /^### (.*$)/gim,
       '<h3 class="text-[1.1rem] font-bold text-[#dbdee1] mt-3 mb-1">$1</h3>',
     )

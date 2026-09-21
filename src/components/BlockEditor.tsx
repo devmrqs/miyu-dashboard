@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import type { Block } from "../types/block";
+import type { Block, ButtonActionBlock } from "../types/block";
 
 interface BlockEditorProps {
   block: Block;
@@ -54,6 +54,13 @@ function MarkdownTextarea({
   return (
     <div className="space-y-3">
       <div className="flex gap-3 flex-wrap mb-1">
+        <button
+          onMouseDown={(e) => handleToolbarClick(e, "> ", "")}
+          className={btnClass}
+          title="Citação (Barra Lateral)"
+        >
+          &gt; Citação
+        </button>
         <button
           onMouseDown={(e) => handleToolbarClick(e, "**", "**")}
           className={btnClass}
@@ -110,6 +117,29 @@ function MarkdownTextarea({
         >
           Tt
         </button>
+
+        {/* NOVOS ATALHOS NATIVOS DO DISCORD */}
+        <button
+          onMouseDown={(e) => handleToolbarClick(e, "<:nome:", ":ID_AQUI>")}
+          className={btnClass}
+          title="Emoji do Discord"
+        >
+          😃 Emoji
+        </button>
+        <button
+          onMouseDown={(e) => handleToolbarClick(e, "<@&", "ID_AQUI>")}
+          className={btnClass}
+          title="Menção a Cargo/Usuário"
+        >
+          @ Menção
+        </button>
+        <button
+          onMouseDown={(e) => handleToolbarClick(e, "<#", "ID_AQUI>")}
+          className={btnClass}
+          title="Menção a Canal"
+        >
+          # Canal
+        </button>
       </div>
 
       <textarea
@@ -152,14 +182,20 @@ function BlockEditor({ block, onChange }: BlockEditorProps) {
           <input
             className={inputClass}
             placeholder="Texto do botão"
-            value={block.label}
+            value={block.label || ""}
             onChange={(e) => onChange({ ...block, label: e.target.value })}
           />
           <input
             className={inputClass}
             placeholder="https://..."
-            value={block.url}
+            value={block.url || ""}
             onChange={(e) => onChange({ ...block, url: e.target.value })}
+          />
+          <input
+            className={inputClass}
+            placeholder="Emoji (opcional, ex: 🔗 ou <:nome:1234>)"
+            value={block.emoji || ""}
+            onChange={(e) => onChange({ ...block, emoji: e.target.value })}
           />
         </div>
       );
@@ -170,15 +206,32 @@ function BlockEditor({ block, onChange }: BlockEditorProps) {
           <input
             className={inputClass}
             placeholder="Texto do botão"
-            value={block.label}
+            value={block.label || ""}
             onChange={(e) => onChange({ ...block, label: e.target.value })}
           />
           <input
             className={inputClass}
             placeholder="ID da ação (ex: teste_dinamico)"
-            value={block.actionId}
+            value={block.actionId || ""}
             onChange={(e) => onChange({ ...block, actionId: e.target.value })}
           />
+          <div className="flex gap-2">
+            <select
+              className={`${inputClass} w-1/2`}
+              value={block.style || "primary"}
+              onChange={(e) =>
+                onChange({
+                  ...block,
+                  style: e.target.value as ButtonActionBlock["style"],
+                })
+              }
+            >
+              <option value="primary">Primary (Azul)</option>
+              <option value="secondary">Secondary (Cinza)</option>
+              <option value="success">Success (Verde)</option>
+              <option value="danger">Danger (Vermelho)</option>
+            </select>
+          </div>
         </div>
       );
 
@@ -196,7 +249,7 @@ function BlockEditor({ block, onChange }: BlockEditorProps) {
           <input
             className={inputClass}
             placeholder="URL da imagem ou {avatar_usuario}"
-            value={block.imageUrl}
+            value={block.imageUrl || ""}
             onChange={(e) => onChange({ ...block, imageUrl: e.target.value })}
           />
         </div>
@@ -208,7 +261,7 @@ function BlockEditor({ block, onChange }: BlockEditorProps) {
           className={inputClass}
           rows={2}
           placeholder="URLs separadas por vírgula"
-          value={block.images.join(", ")}
+          value={block.images ? block.images.join(", ") : ""}
           onChange={(e) =>
             onChange({
               ...block,

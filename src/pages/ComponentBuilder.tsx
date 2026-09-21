@@ -1,15 +1,23 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
+import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 import { apiFetch } from "../lib/api";
+import { useToast } from "../lib/useToast";
 import type { Block, BlockType } from "../types/block";
 import AddBlockMenu from "../components/AddBlockMenu";
-import BlockEditor from "../components/BlockEditor";
+import SortableBlockItem from "../components/SortableBlockItem";
 import AccentColorPicker from "../components/AccentColorPicker";
 import DiscordPreview from "../components/DiscordPreview";
 import StickerCard from "../components/StickerCard";
 import EmptyState from "../components/EmptyState";
 import ChannelSelect from "../components/ChannelSelect";
+import ConfirmModal from "../components/ConfirmModal";
 
 function createEmptyBlock(type: BlockType): Block {
   const id = crypto.randomUUID();
@@ -30,17 +38,21 @@ function createEmptyBlock(type: BlockType): Block {
 }
 
 function stripBlockIds(blocks: Block[]) {
-  return blocks.map(({ id, ...rest }) => {
-    void id;
-    return rest;
+  return blocks.map((block) => {
+    const copy: Record<string, unknown> = { ...block };
+    delete copy.id;
+    return copy;
   });
 }
 
 function ComponentBuilder() {
   const { guildId } = useParams();
+  const { addToast } = useToast();
+
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [accentColor, setAccentColor] = useState<string | null>(null);
   const [channelId, setChannelId] = useState<string | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   function handleAddBlock(type: BlockType) {
     setBlocks((prev) => [...prev, createEmptyBlock(type)]);
@@ -54,6 +66,17 @@ function ComponentBuilder() {
     setBlocks((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
   }
 
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    setBlocks((prev) => {
+      const oldIndex = prev.findIndex((b) => b.id === active.id);
+      const newIndex = prev.findIndex((b) => b.id === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  }
+
   const sendMutation = useMutation({
     mutationFn: () =>
       apiFetch(`/guilds/${guildId}/messages`, {
@@ -64,11 +87,18 @@ function ComponentBuilder() {
           accentColor,
         }),
       }),
+    onSuccess: () => {
+      addToast("success", "Mensagem enviada com sucesso!");
+      setBlocks([]);
+    },
+    onError: (error) => {
+      addToast("error", `Erro ao enviar: ${error.message}`);
+    },
   });
 
-  function handleSend() {
+  function handleSendClick() {
     if (!channelId || blocks.length === 0) return;
-    sendMutation.mutate();
+    setIsConfirmOpen(true);
   }
 
   return (
@@ -85,48 +115,35 @@ function ComponentBuilder() {
         {blocks.length === 0 ? (
           <EmptyState message="Nenhum bloco ainda — comece adicionando um abaixo!" />
         ) : (
-          <div className="space-y-3">
-            {blocks.map((block) => (
-              <div
-                key={block.id}
-                className="p-3 border-0.5 border-ink/30 rounded-lg space-y-2"
-              >
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-ink/50 uppercase">
-                    {block.type}
-                  </p>
-                  <button
-                    onClick={() => handleRemoveBlock(block.id)}
-                    className="w-7 h-7 flex items-center justify-center bg-red-100 border-0.5 border-ink rounded-lg font-bold text-red-700 hover:bg-red-200 transition"
-                  >
-                    ×
-                  </button>
-                </div>
-                <BlockEditor block={block} onChange={handleUpdateBlock} />
+          <DndContext
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={blocks.map((b) => b.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3">
+                {blocks.map((block) => (
+                  <SortableBlockItem
+                    key={block.id}
+                    block={block}
+                    onUpdate={handleUpdateBlock}
+                    onRemove={handleRemoveBlock}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         )}
 
         <button
-          onClick={handleSend}
+          onClick={handleSendClick}
           disabled={!channelId || blocks.length === 0 || sendMutation.isPending}
           className="w-full mt-4 bg-miyu-pink-dark text-white font-bold py-3 rounded-xl border-[3px] border-ink shadow-[4px_4px_0_var(--color-ink)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_var(--color-ink)] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_var(--color-ink)]"
         >
           {sendMutation.isPending ? "Enviando..." : "Enviar mensagem"}
         </button>
-
-        {sendMutation.isSuccess && (
-          <p className="text-center font-bold text-green-700 mt-2">
-            ✓ Mensagem enviada com sucesso!
-          </p>
-        )}
-
-        {sendMutation.isError && (
-          <p className="text-center font-bold text-red-700 mt-2">
-            Erro: {sendMutation.error.message}
-          </p>
-        )}
       </StickerCard>
 
       <AddBlockMenu onAdd={handleAddBlock} />
@@ -135,6 +152,14 @@ function ComponentBuilder() {
         <p className="text-xs font-bold text-ink/50 uppercase mb-3">Preview</p>
         <DiscordPreview blocks={blocks} accentColor={accentColor} />
       </StickerCard>
+
+      <ConfirmModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={() => sendMutation.mutate()}
+        title="Confirmar envio?"
+        message="A mensagem será enviada para o canal selecionado agora."
+      />
     </div>
   );
 }

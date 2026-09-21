@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
+import { apiFetch } from "../lib/api";
 import type { Block, BlockType } from "../types/block";
 import AddBlockMenu from "../components/AddBlockMenu";
 import BlockEditor from "../components/BlockEditor";
@@ -26,7 +29,15 @@ function createEmptyBlock(type: BlockType): Block {
   }
 }
 
+function stripBlockIds(blocks: Block[]) {
+  return blocks.map(({ id, ...rest }) => {
+    void id;
+    return rest;
+  });
+}
+
 function ComponentBuilder() {
+  const { guildId } = useParams();
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [accentColor, setAccentColor] = useState<string | null>(null);
   const [channelId, setChannelId] = useState<string | null>(null);
@@ -41,6 +52,23 @@ function ComponentBuilder() {
 
   function handleUpdateBlock(updated: Block) {
     setBlocks((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+  }
+
+  const sendMutation = useMutation({
+    mutationFn: () =>
+      apiFetch(`/guilds/${guildId}/messages`, {
+        method: "POST",
+        body: JSON.stringify({
+          channelId,
+          blocks: stripBlockIds(blocks),
+          accentColor,
+        }),
+      }),
+  });
+
+  function handleSend() {
+    if (!channelId || blocks.length === 0) return;
+    sendMutation.mutate();
   }
 
   return (
@@ -78,6 +106,26 @@ function ComponentBuilder() {
               </div>
             ))}
           </div>
+        )}
+
+        <button
+          onClick={handleSend}
+          disabled={!channelId || blocks.length === 0 || sendMutation.isPending}
+          className="w-full mt-4 bg-miyu-pink-dark text-white font-bold py-3 rounded-xl border-[3px] border-ink shadow-[4px_4px_0_var(--color-ink)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_var(--color-ink)] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0_var(--color-ink)]"
+        >
+          {sendMutation.isPending ? "Enviando..." : "Enviar mensagem"}
+        </button>
+
+        {sendMutation.isSuccess && (
+          <p className="text-center font-bold text-green-700 mt-2">
+            ✓ Mensagem enviada com sucesso!
+          </p>
+        )}
+
+        {sendMutation.isError && (
+          <p className="text-center font-bold text-red-700 mt-2">
+            Erro: {sendMutation.error.message}
+          </p>
         )}
       </StickerCard>
 

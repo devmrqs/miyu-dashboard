@@ -3,7 +3,7 @@ import miyuMascot from "../assets/miyu-mascot.jpeg";
 
 function AppHeader() {
   return (
-    <header className="border-b-[3px] border-ink bg-miyu-cream">
+    <header className="border-b-[3px] border-ink bg-miyu-cream select-none">
       <div className="max-w-3xl mx-auto px-8 py-4 flex items-center gap-3">
         <img
           src={miyuMascot}

@@ -1,6 +1,6 @@
 import StickerCard from "../components/StickerCard";
 
-function EmbedBuilder() {
+function WelcomeBuilder() {
   return (
     <StickerCard className="p-6">
       <h2 className="text-xl font-bold text-ink">
@@ -10,4 +10,4 @@ function EmbedBuilder() {
   );
 }
 
-export default EmbedBuilder;
+export default WelcomeBuilder;

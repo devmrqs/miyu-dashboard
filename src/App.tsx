@@ -3,9 +3,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import GuildLayout from "./pages/GuildLayout";
-import Welcome from "./pages/Welcome";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ComponentBuilder from "./pages/ComponentBuilder";
+import WelcomeBuilder from "./pages/Welcome";
 
 const queryClient = new QueryClient();
 
@@ -18,8 +18,8 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/:guildId" element={<GuildLayout />}>
-              <Route path="embed" element={<ComponentBuilder />} />
-              <Route path="welcome" element={<Welcome />} />
+              <Route path="components" element={<ComponentBuilder />} />
+              <Route path="welcome" element={<WelcomeBuilder />} />
             </Route>
           </Route>
         </Routes>

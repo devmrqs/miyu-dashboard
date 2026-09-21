@@ -45,7 +45,7 @@ function Dashboard() {
         </h1>
         <div className="space-y-4">
           {guilds?.map((guild, i) => (
-            <Link key={guild.id} to={`/dashboard/${guild.id}/embed`}>
+            <Link key={guild.id} to={`/dashboard/${guild.id}/components`}>
               <StickerCard
                 className={`p-4 hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[3px_3px_0_var(--color-ink)] transition-all cursor-pointer ${i % 2 === 0 ? "rotate-1" : "-rotate-1"}`}
               >

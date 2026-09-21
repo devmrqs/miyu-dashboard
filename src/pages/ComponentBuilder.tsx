@@ -1,12 +1,93 @@
+import { useState } from "react";
+import type { Block, BlockType } from "../types/block";
+import AddBlockMenu from "../components/AddBlockMenu";
+import BlockEditor from "../components/BlockEditor";
+import AccentColorPicker from "../components/AccentColorPicker";
+import DiscordPreview from "../components/DiscordPreview";
 import StickerCard from "../components/StickerCard";
+import EmptyState from "../components/EmptyState";
+import ChannelSelect from "../components/ChannelSelect";
+
+function createEmptyBlock(type: BlockType): Block {
+  const id = crypto.randomUUID();
+  switch (type) {
+    case "text":
+      return { id, type, content: "" };
+    case "separator":
+      return { id, type };
+    case "button-link":
+      return { id, type, label: "", url: "" };
+    case "button-action":
+      return { id, type, label: "", actionId: "", style: "primary" };
+    case "section-thumbnail":
+      return { id, type, content: "", imageUrl: "" };
+    case "media-gallery":
+      return { id, type, images: [] };
+  }
+}
 
 function ComponentBuilder() {
+  const [blocks, setBlocks] = useState<Block[]>([]);
+  const [accentColor, setAccentColor] = useState<string | null>(null);
+  const [channelId, setChannelId] = useState<string | null>(null);
+
+  function handleAddBlock(type: BlockType) {
+    setBlocks((prev) => [...prev, createEmptyBlock(type)]);
+  }
+
+  function handleRemoveBlock(id: string) {
+    setBlocks((prev) => prev.filter((block) => block.id !== id));
+  }
+
+  function handleUpdateBlock(updated: Block) {
+    setBlocks((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+  }
+
   return (
-    <StickerCard className="p-6">
-      <h2 className="text-xl font-bold text-ink">
-        Builder de Componentes (em construção)
-      </h2>
-    </StickerCard>
+    <div className="space-y-4 select-none">
+      <StickerCard className="p-6">
+        <ChannelSelect value={channelId} onChange={setChannelId} />
+      </StickerCard>
+
+      <StickerCard className="p-6">
+        <AccentColorPicker value={accentColor} onChange={setAccentColor} />
+      </StickerCard>
+
+      <StickerCard className="p-6">
+        {blocks.length === 0 ? (
+          <EmptyState message="Nenhum bloco ainda — comece adicionando um abaixo!" />
+        ) : (
+          <div className="space-y-3">
+            {blocks.map((block) => (
+              <div
+                key={block.id}
+                className="p-3 border-0.5 border-ink/30 rounded-lg space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-ink/50 uppercase">
+                    {block.type}
+                  </p>
+                  <button
+                    onClick={() => handleRemoveBlock(block.id)}
+                    className="w-7 h-7 flex items-center justify-center bg-red-100 border-0.5 border-ink rounded-lg font-bold text-red-700 hover:bg-red-200 transition"
+                  >
+                    ×
+                  </button>
+                </div>
+                <BlockEditor block={block} onChange={handleUpdateBlock} />
+              </div>
+            ))}
+          </div>
+        )}
+      </StickerCard>
+
+      <AddBlockMenu onAdd={handleAddBlock} />
+
+      <StickerCard className="p-6">
+        <p className="text-xs font-bold text-ink/50 uppercase mb-3">Preview</p>
+        <DiscordPreview blocks={blocks} accentColor={accentColor} />
+      </StickerCard>
+    </div>
   );
 }
 

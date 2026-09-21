@@ -8,7 +8,7 @@ interface StickerCardProps {
 function StickerCard({ children, className = "" }: StickerCardProps) {
   return (
     <div
-      className={`bg-miyu-cream border-[3px] border-ink rounded-2xl shadow-[6px_6px_0_var(--color-ink)] ${className}`}
+      className={`bg-miyu-cream border-[3px] border-ink rounded-2xl shadow-[6px_6px_0_var(--color-ink)] ${className} select-none`}
     >
       {children}
     </div>

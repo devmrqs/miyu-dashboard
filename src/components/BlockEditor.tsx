@@ -6,6 +6,45 @@ interface BlockEditorProps {
   onChange: (updated: Block) => void;
 }
 
+interface ToolbarButton {
+  label: string;
+  prefix: string;
+  suffix?: string;
+  title: string;
+  wide?: boolean;
+}
+
+const TOOLBAR_GROUPS: ToolbarButton[][] = [
+  [
+    { label: "B", prefix: "**", suffix: "**", title: "Negrito" },
+    { label: "I", prefix: "*", suffix: "*", title: "Itálico" },
+    { label: "❝", prefix: "> ", title: "Citação" },
+  ],
+  [
+    { label: "H1", prefix: "# ", title: "Título 1" },
+    { label: "H2", prefix: "## ", title: "Título 2" },
+    { label: "H3", prefix: "### ", title: "Título 3" },
+    { label: "Tt", prefix: "-# ", title: "Texto pequeno" },
+    { label: "•", prefix: "- ", title: "Lista" },
+  ],
+  [
+    { label: "Link", prefix: "[", suffix: "](url)", title: "Link", wide: true },
+    {
+      label: "😃",
+      prefix: "<:nome:",
+      suffix: ":ID_AQUI>",
+      title: "Emoji do Discord",
+    },
+    {
+      label: "@",
+      prefix: "<@&",
+      suffix: "ID_AQUI>",
+      title: "Menção a cargo/usuário",
+    },
+    { label: "#", prefix: "<#", suffix: "ID_AQUI>", title: "Menção a canal" },
+  ],
+];
+
 function MarkdownTextarea({
   value,
   onChange,
@@ -48,98 +87,33 @@ function MarkdownTextarea({
     applyFormat(prefix, suffix);
   };
 
-  const btnClass =
-    "px-3 py-1 bg-miyu-cream border-[2px] border-ink rounded-xl text-xs font-bold text-ink shadow-[4px_4px_0_var(--color-ink)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_var(--color-ink)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none transition-all mb-3";
-
   return (
-    <div className="space-y-3">
-      <div className="flex gap-3 flex-wrap mb-1">
-        <button
-          onMouseDown={(e) => handleToolbarClick(e, "> ", "")}
-          className={btnClass}
-          title="Citação (Barra Lateral)"
-        >
-          &gt; Citação
-        </button>
-        <button
-          onMouseDown={(e) => handleToolbarClick(e, "**", "**")}
-          className={btnClass}
-          title="Negrito"
-        >
-          B
-        </button>
-        <button
-          onMouseDown={(e) => handleToolbarClick(e, "*", "*")}
-          className={`${btnClass} italic`}
-          title="Itálico"
-        >
-          I
-        </button>
-        <button
-          onMouseDown={(e) => handleToolbarClick(e, "# ", "")}
-          className={btnClass}
-          title="Título 1"
-        >
-          H1
-        </button>
-        <button
-          onMouseDown={(e) => handleToolbarClick(e, "## ", "")}
-          className={btnClass}
-          title="Título 2"
-        >
-          H2
-        </button>
-        <button
-          onMouseDown={(e) => handleToolbarClick(e, "### ", "")}
-          className={btnClass}
-          title="Título 3"
-        >
-          H3
-        </button>
-        <button
-          onMouseDown={(e) => handleToolbarClick(e, "[", "](url)")}
-          className={btnClass}
-          title="Link"
-        >
-          Link
-        </button>
-        <button
-          onMouseDown={(e) => handleToolbarClick(e, "- ", "")}
-          className={btnClass}
-          title="Lista/Tópico"
-        >
-          •
-        </button>
-        <button
-          onMouseDown={(e) => handleToolbarClick(e, "-# ", "")}
-          className={btnClass}
-          title="Texto Pequeno"
-        >
-          Tt
-        </button>
+    <div className="space-y-2">
+      <div className="flex border-0.5 border-ink rounded-lg overflow-hidden w-fit bg-white shadow-[4px_4px_0_var(--color-ink)]">
+        {TOOLBAR_GROUPS.map((group, groupIndex) => (
+          <div key={groupIndex} className="flex">
+            {group.map((btn, btnIndex) => {
+              const isLastInGroup = btnIndex === group.length - 1;
+              const isLastGroup = groupIndex === TOOLBAR_GROUPS.length - 1;
+              const showBorder = !(isLastInGroup && isLastGroup);
 
-        {/* NOVOS ATALHOS NATIVOS DO DISCORD */}
-        <button
-          onMouseDown={(e) => handleToolbarClick(e, "<:nome:", ":ID_AQUI>")}
-          className={btnClass}
-          title="Emoji do Discord"
-        >
-          😃 Emoji
-        </button>
-        <button
-          onMouseDown={(e) => handleToolbarClick(e, "<@&", "ID_AQUI>")}
-          className={btnClass}
-          title="Menção a Cargo/Usuário"
-        >
-          @ Menção
-        </button>
-        <button
-          onMouseDown={(e) => handleToolbarClick(e, "<#", "ID_AQUI>")}
-          className={btnClass}
-          title="Menção a Canal"
-        >
-          # Canal
-        </button>
+              return (
+                <button
+                  key={btn.label}
+                  onMouseDown={(e) =>
+                    handleToolbarClick(e, btn.prefix, btn.suffix)
+                  }
+                  title={btn.title}
+                  className={`h-9 ${btn.wide ? "px-3" : "w-9"} flex items-center justify-center text-sm font-bold text-ink bg-white hover:bg-ink hover:text-white active:bg-miyu-pink-dark active:text-white transition-colors ${
+                    showBorder ? "border-r-0.5 border-ink" : ""
+                  } ${isLastInGroup && !isLastGroup ? "border-r-[3px]" : ""}`}
+                >
+                  {btn.label}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
       <textarea
@@ -215,23 +189,21 @@ function BlockEditor({ block, onChange }: BlockEditorProps) {
             value={block.actionId || ""}
             onChange={(e) => onChange({ ...block, actionId: e.target.value })}
           />
-          <div className="flex gap-2">
-            <select
-              className={`${inputClass} w-1/2`}
-              value={block.style || "primary"}
-              onChange={(e) =>
-                onChange({
-                  ...block,
-                  style: e.target.value as ButtonActionBlock["style"],
-                })
-              }
-            >
-              <option value="primary">Primary (Azul)</option>
-              <option value="secondary">Secondary (Cinza)</option>
-              <option value="success">Success (Verde)</option>
-              <option value="danger">Danger (Vermelho)</option>
-            </select>
-          </div>
+          <select
+            className={inputClass}
+            value={block.style || "primary"}
+            onChange={(e) =>
+              onChange({
+                ...block,
+                style: e.target.value as ButtonActionBlock["style"],
+              })
+            }
+          >
+            <option value="primary">Primary (Azul)</option>
+            <option value="secondary">Secondary (Cinza)</option>
+            <option value="success">Success (Verde)</option>
+            <option value="danger">Danger (Vermelho)</option>
+          </select>
         </div>
       );
 

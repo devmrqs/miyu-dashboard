@@ -2,15 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import type { WelcomeConfig } from "../types/welcome";
-import type { Block } from "../types/block";
+import type { ComponentGroup } from "../types/componentGroup";
 import WelcomeForm from "../components/WelcomeForm";
 import LoadingState from "../components/LoadingState";
 
-function addBlockIds(blocks: Omit<Block, "id">[]): Block[] {
-  return blocks.map((block) => ({
-    ...block,
+function addIds(components: WelcomeConfig["components"]): ComponentGroup[] {
+  return components.map((component) => ({
     id: crypto.randomUUID(),
-  })) as Block[];
+    accentColor: component.accentColor,
+    blocks: component.blocks.map((block) => ({
+      ...block,
+      id: crypto.randomUUID(),
+    })) as ComponentGroup["blocks"],
+  }));
 }
 
 function WelcomeBuilder() {
@@ -29,8 +33,9 @@ function WelcomeBuilder() {
   const initialState = {
     channelId: existingConfig?.channelId ?? null,
     enabled: existingConfig?.enabled ?? true,
-    accentColor: existingConfig?.accentColor ?? null,
-    blocks: existingConfig ? addBlockIds(existingConfig.blocks) : [],
+    components: existingConfig
+      ? addIds(existingConfig.components)
+      : [{ id: crypto.randomUUID(), blocks: [], accentColor: null }],
   };
 
   return <WelcomeForm key={guildId} initialState={initialState} />;

@@ -1,8 +1,12 @@
 import type { Block } from "../types/block";
 
-interface DiscordPreviewProps {
+interface ComponentGroupPreview {
   blocks: Block[];
   accentColor: string | null;
+}
+
+interface DiscordPreviewProps {
+  components: ComponentGroupPreview[];
 }
 
 const DISCORD_BUTTON_COLORS: Record<string, string> = {
@@ -21,14 +25,6 @@ function escapeHtml(text: string): string {
 
 function renderMarkdown(text: string) {
   const html = escapeHtml(text)
-    .replace(
-      /^>>> ([\s\S]+)$/gm,
-      '<div class="border-l-4 border-[#4e5058] pl-3 my-1 text-[#dbdee1]">$1</div>',
-    )
-    .replace(
-      /^> (.*$)/gim,
-      '<div class="border-l-4 border-[#4e5058] pl-3 my-1 text-[#dbdee1]">$1</div>',
-    )
     .replace(
       /^### (.*$)/gim,
       '<h3 class="text-[1.1rem] font-bold text-[#dbdee1] mt-3 mb-1">$1</h3>',
@@ -64,112 +60,116 @@ function renderMarkdown(text: string) {
   return { __html: html };
 }
 
-function DiscordPreview({ blocks, accentColor }: DiscordPreviewProps) {
+function DiscordPreview({ components }: DiscordPreviewProps) {
   return (
-    <div className="bg-[#313338] rounded-lg p-4">
-      <div
-        className="bg-[#2b2d31] rounded-md p-4 border-l-4"
-        style={{ borderLeftColor: accentColor ?? "transparent" }}
-      >
-        {blocks.length === 0 && (
-          <p className="text-[#949ba4] text-sm italic">
-            Adicione blocos para ver o preview...
-          </p>
-        )}
+    <div className="bg-[#313338] rounded-lg p-4 space-y-3">
+      {components.map((component, groupIndex) => (
+        <div
+          key={groupIndex}
+          className="bg-[#2b2d31] rounded-md p-4 border-l-4"
+          style={{ borderLeftColor: component.accentColor ?? "transparent" }}
+        >
+          {component.blocks.length === 0 && (
+            <p className="text-[#949ba4] text-sm italic">
+              Adicione blocos para ver o preview...
+            </p>
+          )}
 
-        {blocks.map((block) => {
-          switch (block.type) {
-            case "text":
-              return (
-                <div
-                  key={block.id}
-                  className="text-[#dbdee1] text-sm mb-2 last:mb-0"
-                  dangerouslySetInnerHTML={renderMarkdown(
-                    block.content || "...",
-                  )}
-                />
-              );
-
-            case "separator":
-              return <hr key={block.id} className="border-[#3f4147] my-3" />;
-
-            case "button-link":
-              return (
-                <button
-                  key={block.id}
-                  className="bg-[#4e5058] text-white text-sm font-medium px-4 py-2 rounded-md mb-2 mr-2 cursor-default"
-                  disabled
-                >
-                  {block.label || "Botão"} ↗
-                </button>
-              );
-
-            case "button-action":
-              return (
-                <button
-                  key={block.id}
-                  className="text-white text-sm font-medium px-4 py-2 rounded-md mb-2 mr-2 cursor-default"
-                  style={{
-                    backgroundColor: DISCORD_BUTTON_COLORS[block.style],
-                  }}
-                  disabled
-                >
-                  {block.label || "Botão"}
-                </button>
-              );
-
-            case "section-thumbnail":
-              return (
-                <div key={block.id} className="flex gap-3 items-start mb-2">
+          {component.blocks.map((block) => {
+            switch (block.type) {
+              case "text":
+                return (
                   <div
-                    className="text-[#dbdee1] text-sm flex-1"
+                    key={block.id}
+                    className="text-[#dbdee1] text-sm mb-2 last:mb-0"
                     dangerouslySetInnerHTML={renderMarkdown(
                       block.content || "...",
                     )}
                   />
-                  {block.imageUrl && !block.imageUrl.startsWith("{") && (
-                    <img
-                      src={block.imageUrl}
-                      alt=""
-                      className="w-16 h-16 rounded-md object-cover"
+                );
+
+              case "separator":
+                return <hr key={block.id} className="border-[#3f4147] my-3" />;
+
+              case "button-link":
+                return (
+                  <button
+                    key={block.id}
+                    className="bg-[#4e5058] text-white text-sm font-medium px-4 py-2 rounded-md mb-2 mr-2 cursor-default"
+                    disabled
+                  >
+                    {block.emoji ? `${block.emoji} ` : ""}
+                    {block.label || "Botão"} ↗
+                  </button>
+                );
+
+              case "button-action":
+                return (
+                  <button
+                    key={block.id}
+                    className="text-white text-sm font-medium px-4 py-2 rounded-md mb-2 mr-2 cursor-default"
+                    style={{
+                      backgroundColor: DISCORD_BUTTON_COLORS[block.style],
+                    }}
+                    disabled
+                  >
+                    {block.label || "Botão"}
+                  </button>
+                );
+
+              case "section-thumbnail":
+                return (
+                  <div key={block.id} className="flex gap-3 items-start mb-2">
+                    <div
+                      className="text-[#dbdee1] text-sm flex-1"
+                      dangerouslySetInnerHTML={renderMarkdown(
+                        block.content || "...",
+                      )}
                     />
-                  )}
-                  {block.imageUrl?.startsWith("{") && (
-                    <div className="w-16 h-16 rounded-md bg-[#3f4147] flex items-center justify-center text-[#949ba4] text-xs">
-                      {block.imageUrl}
-                    </div>
-                  )}
-                </div>
-              );
-
-            case "media-gallery":
-              return (
-                <div key={block.id} className="flex gap-2 mb-2 flex-wrap">
-                  {block.images.map((url, i) =>
-                    url.startsWith("{") ? (
-                      <div
-                        key={i}
-                        className="w-24 h-24 rounded-md bg-[#3f4147] flex items-center justify-center text-[#949ba4] text-xs text-center p-1"
-                      >
-                        {url}
-                      </div>
-                    ) : (
+                    {block.imageUrl && !block.imageUrl.startsWith("{") && (
                       <img
-                        key={i}
-                        src={url}
+                        src={block.imageUrl}
                         alt=""
-                        className="w-24 h-24 rounded-md object-cover"
+                        className="w-16 h-16 rounded-md object-cover"
                       />
-                    ),
-                  )}
-                </div>
-              );
+                    )}
+                    {block.imageUrl?.startsWith("{") && (
+                      <div className="w-16 h-16 rounded-md bg-[#3f4147] flex items-center justify-center text-[#949ba4] text-xs">
+                        {block.imageUrl}
+                      </div>
+                    )}
+                  </div>
+                );
 
-            default:
-              return null;
-          }
-        })}
-      </div>
+              case "media-gallery":
+                return (
+                  <div key={block.id} className="flex gap-2 mb-2 flex-wrap">
+                    {block.images.map((url, i) =>
+                      url.startsWith("{") ? (
+                        <div
+                          key={i}
+                          className="w-24 h-24 rounded-md bg-[#3f4147] flex items-center justify-center text-[#949ba4] text-xs text-center p-1"
+                        >
+                          {url}
+                        </div>
+                      ) : (
+                        <img
+                          key={i}
+                          src={url}
+                          alt=""
+                          className="w-24 h-24 rounded-md object-cover"
+                        />
+                      ),
+                    )}
+                  </div>
+                );
+
+              default:
+                return null;
+            }
+          })}
+        </div>
+      ))}
     </div>
   );
 }
